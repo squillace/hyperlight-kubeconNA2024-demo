@@ -1,0 +1,46 @@
+@startuml
+!pragma layout smetana
+hide stereotypes
+
+skinparam rectangle {
+    BackgroundColor<<Routes>> #B0A89E
+
+    BackgroundColor<<NoVM>> #D55E00
+    BackgroundColor<<NoVMHW>> #FF4500
+
+    BackgroundColor<<HL>> #2ECC71
+
+    BackgroundColor<<HLHW>> #1E90FF
+    BackgroundColor<<HLHWCold>> #ADD8E6
+    BackgroundColor<<HLHWWarm>> #FF7F50
+
+    BackgroundColor<<HLSafety>> #A8E6A1
+    BackgroundColor<<HLSafetyDRNP>> #FFBF00
+}
+
+actor User
+
+rectangle Routes <<Routes>> as routes {
+    rectangle "No VM" <<NoVM>> as no_vm {
+        rectangle "/hello-world" <<NoVMHW>> as no_vm_hw
+    }
+
+    rectangle "/hyperlight" <<HL>> as hl {
+        rectangle "/hello-world" <<HLHW>> as hl_hw {
+            rectangle "/cold" <<HLHWCold>> as hl_hw_cold
+            rectangle "/warm" <<HLHWWarm>> as hl_hw_warm
+        }
+
+        rectangle "/safety" <<HLSafety>> as hl_safety {
+            rectangle "/deref-raw-null-ptr" <<HLSafetyDRNP>> as hl_safety_drnp
+        }
+    }
+}
+
+note bottom of hl_safety_drnp: Executes in a warm Hyperlight VM
+
+User -r-> routes: "makes\nrequests\t"
+hl_hw -d[hidden]-> hl_safety
+hl -d[hidden]--> no_vm
+
+@enduml

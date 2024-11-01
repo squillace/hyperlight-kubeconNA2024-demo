@@ -1,0 +1,8 @@
+[package]
+name = "demo-guest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hyperlight_common = { path = "../../hyperlight/src/hyperlight_common", default-features = false }
+hyperlight_guest = { path = "../../hyperlight/src/hyperlight_guest" }
