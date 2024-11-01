@@ -4,12 +4,15 @@ use hyperlight_host::{MultiUseSandbox, UninitializedSandbox};
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 use tokio::sync::{Mutex, Semaphore};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use warp::Filter;
 
 pub(super) mod hello_world;
 pub(super) mod safety;
 
 const INITIAL_POOL_SIZE: usize = 10;
 const MAX_POOL_SIZE: usize = 100;
+static CREATED_VM_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
 struct SandboxError;
@@ -24,6 +27,9 @@ pub(crate) static MULTI_USE_SANDBOX_POOL: Lazy<Arc<Mutex<Vec<Arc<Mutex<MultiUseS
 
 // Helper function to create a new sandbox
 async fn create_sandbox() -> Arc<Mutex<MultiUseSandbox>> {
+    // Increment the counter before creating a new sandbox
+    CREATED_VM_COUNT.fetch_add(1, Ordering::SeqCst);
+
     let uninitialized_sandbox = UninitializedSandbox::new(
         hyperlight_host::GuestBinary::FilePath(crate::DEMO_GUEST_PATH.to_string()),
         None, // default configuration
@@ -35,6 +41,7 @@ async fn create_sandbox() -> Arc<Mutex<MultiUseSandbox>> {
         uninitialized_sandbox.evolve(Noop::default()).unwrap(),
     ))
 }
+
 
 // Function to acquire a sandbox, creating a new one if the pool is empty
 pub(super) async fn acquire_sandbox() -> Arc<Mutex<MultiUseSandbox>> {
@@ -67,4 +74,13 @@ pub(super) async fn warm_up_pool() {
         pool.push(sandbox);
         println!("Sandbox instance warmed up.");
     }
+}
+
+pub(crate) fn get_vm_count() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path("hyperlight")
+        .and(warp::path("vm-count"))
+        .map(|| {
+            let count = CREATED_VM_COUNT.load(Ordering::SeqCst);
+            format!("Number of created VMs: {}", count)
+        })
 }

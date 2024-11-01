@@ -11,6 +11,7 @@ async fn main() -> anyhow::Result<()> {
     hyperlight::warm_up_pool().await;
 
     let routes = non_hyperlight::hello_world()
+        .or(hyperlight::get_vm_count())
         .or(hyperlight::hello_world::cold())
         .or(hyperlight::hello_world::warm())
         .or(hyperlight::safety::deref_raw_null_ptr());
