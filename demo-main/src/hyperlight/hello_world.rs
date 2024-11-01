@@ -13,7 +13,7 @@ use hyperlight_host::sandbox_state::sandbox::EvolvableSandbox;
 use hyperlight_host::sandbox_state::transition::Noop;
 use hyperlight_host::{MultiUseSandbox, UninitializedSandbox};
 
-use crate::hyperlight::{SandboxError, COUNTER, MULTI_USE_SANDBOX_POOL, POOL_SIZE, SANDBOX_POOL};
+use crate::hyperlight::{acquire_sandbox, release_sandbox, SandboxError};
 
 pub(crate) fn cold() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
     warp::path("hyperlight")
@@ -44,8 +44,6 @@ pub(crate) fn cold() -> impl Filter<Extract=impl warp::Reply, Error=warp::Reject
         })
 }
 
-use std::sync::atomic::Ordering;
-
 pub(crate) fn warm() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
     warp::path("hyperlight")
         .and(warp::path("hello-world"))
@@ -53,24 +51,25 @@ pub(crate) fn warm() -> impl Filter<Extract=impl warp::Reply, Error=warp::Reject
         .and_then(move || async {
             let message = "Hello, World! I am executing inside of a VM :)\n".to_string();
 
-            // Acquire a permit to access the pool
-            let _permit = SANDBOX_POOL.acquire().await.unwrap();
-
-            // Select a sandbox based on the round-robin counter
-            let index = COUNTER.fetch_add(1, Ordering::SeqCst) % POOL_SIZE;
-            let sandbox = MULTI_USE_SANDBOX_POOL[index].clone();
+            // Acquire a sandbox (create if necessary, reuse if available)
+            let sandbox = acquire_sandbox().await;
 
             // Lock and use the selected sandbox
-            let mut sandbox = sandbox.lock().await;
-            sandbox
-                .call_guest_function_by_name(
-                    "PrintOutput",
-                    ReturnType::Int,
-                    Some(vec![ParameterValue::String(message.clone())]),
-                )
-                .map_err(|_| warp::reject::custom(SandboxError))?;
+            {
+                let mut sandbox_guard = sandbox.lock().await;
+                sandbox_guard
+                    .call_guest_function_by_name(
+                        "PrintOutput",
+                        ReturnType::Int,
+                        Some(vec![ParameterValue::String(message.clone())]),
+                    )
+                    .map_err(|_| warp::reject::custom(SandboxError))?;
+                // `sandbox_guard` goes out of scope here and is dropped
+            }
 
-            // Permit is dropped here, returning it to the pool
+            // Release the sandbox back to the pool
+            release_sandbox(sandbox).await;
+
             Ok::<_, warp::Rejection>("Guest function called inside warm Hyperlight VM.".to_string())
         })
 }
