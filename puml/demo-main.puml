@@ -16,6 +16,8 @@ skinparam rectangle {
 
     BackgroundColor<<HLSafety>> #A8E6A1
     BackgroundColor<<HLSafetyDRNP>> #FFBF00
+
+    BackgroundColor<<HLMisc>> #C5C5C5
 }
 
 actor User
@@ -34,6 +36,8 @@ rectangle Routes <<Routes>> as routes {
         rectangle "/safety" <<HLSafety>> as hl_safety {
             rectangle "/deref-raw-null-ptr" <<HLSafetyDRNP>> as hl_safety_drnp
         }
+
+        rectangle "/vm-count" <<HLMisc>> as hl_vm_count
     }
 }
 
@@ -41,6 +45,7 @@ note bottom of hl_safety_drnp: Executes in a warm Hyperlight VM
 
 User -r-> routes: "makes\nrequests\t"
 hl_hw -d[hidden]-> hl_safety
-hl -d[hidden]--> no_vm
+hl_safety -d[hidden]-> hl_vm_count
+hl -d[hidden]---> no_vm
 
 @enduml

@@ -4,5 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hyperlight_common = { path = "../../hyperlight/src/hyperlight_common", default-features = false }
-hyperlight_guest = { path = "../../hyperlight/src/hyperlight_guest" }
+hyperlight-common = { version = "0.1.0", default-features = false }
+hyperlight-guest = "0.1.0"
+
+[profile.release]
+debug = true
+# Building in normal release mode optimizes my raw null ptr deref code away,
+# so, for now, we set this. A proper fix would be using https://doc.rust-lang.org/std/hint/fn.black_box.html
+# to prevent the optimizer from removing the code.

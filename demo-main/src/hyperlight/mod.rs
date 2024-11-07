@@ -37,8 +37,10 @@ async fn create_sandbox() -> Arc<Mutex<MultiUseSandbox>> {
         None, // default host print function
     ).unwrap();
 
+    let sandbox = uninitialized_sandbox.evolve(Noop::default()).unwrap();
+
     Arc::new(Mutex::new(
-        uninitialized_sandbox.evolve(Noop::default()).unwrap(),
+        sandbox,
     ))
 }
 
@@ -76,7 +78,7 @@ pub(super) async fn warm_up_pool() {
     }
 }
 
-pub(crate) fn get_vm_count() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+pub(crate) fn get_vm_count() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
     warp::path("hyperlight")
         .and(warp::path("vm-count"))
         .map(|| {
