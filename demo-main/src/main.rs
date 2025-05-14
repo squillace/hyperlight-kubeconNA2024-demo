@@ -3,7 +3,10 @@ mod non_hyperlight;
 
 use warp::Filter;
 
+#[cfg(not(feature = "gdb"))]
 const DEMO_GUEST_PATH: &str = "./demo-guest";
+#[cfg(feature = "gdb")]
+const DEMO_GUEST_PATH: &str = "./demo-guest-debug";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

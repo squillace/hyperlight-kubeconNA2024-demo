@@ -15,19 +15,39 @@ use hyperlight_host::{MultiUseSandbox, UninitializedSandbox};
 
 use crate::hyperlight::{acquire_sandbox, release_sandbox, SandboxError};
 
-pub(crate) fn cold() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
+pub(crate) fn cold() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("hyperlight")
         .and(warp::path("hello-world"))
         .and(warp::path("cold"))
         .map(move || {
+            // Create a new sandbox configuration
+            let cfg = {
+                #[cfg(feature = "gdb")]
+                {
+                    use hyperlight_host::sandbox::{config::DebugInfo, SandboxConfiguration};
+
+                    let mut cfg = SandboxConfiguration::default();
+                    let debug = DebugInfo { port: 8080 };
+                    cfg.set_guest_debug_info(debug);
+
+                    Some(cfg)
+                }
+
+                #[cfg(not(feature = "gdb"))]
+                {
+                    // Default configuration without GDB
+                    None
+                }
+            };
+
             // Create a new sandbox per request
             let uninitialized_sandbox = UninitializedSandbox::new(
                 hyperlight_host::GuestBinary::FilePath(crate::DEMO_GUEST_PATH.to_string()),
-                None, // default configuration
+                cfg,  // configuration
                 None, // default run options
                 None, // default host print function
             )
-                .unwrap();
+            .unwrap();
             let mut multi_use_sandbox: MultiUseSandbox =
                 uninitialized_sandbox.evolve(Noop::default()).unwrap();
 
@@ -44,7 +64,7 @@ pub(crate) fn cold() -> impl Filter<Extract=impl warp::Reply, Error=warp::Reject
         })
 }
 
-pub(crate) fn warm() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
+pub(crate) fn warm() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path("hyperlight")
         .and(warp::path("hello-world"))
         .and(warp::path("warm"))

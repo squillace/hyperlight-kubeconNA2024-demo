@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "program",
+      "type": "promptString",
+      "default": "./demo-main/demo-guest-debug",
+      "description": "Path to the program to debug",
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Remote LLDB attach",
+      "type": "lldb",
+      "request": "launch",
+      "targetCreateCommands": [
+        "target create ${workspaceFolder}/demo-main/demo-guest-debug"
+      ],
+      "processCreateCommands": [
+        "gdb-remote localhost:8080"
+      ],
+    },
+    {
+      "name": "Remote GDB attach",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/demo-main/demo-guest-debug",
+      "args": [],
+      "stopAtEntry": true,
+      "hardwareBreakpoints": {
+        "require": false,
+        "limit": 4
+      },
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "logging": {
+        "engineLogging": true,
+        "trace": true,
+        "traceResponse": true,
+      },
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "miDebuggerServerAddress": "localhost:8080",
+      "setupCommands": [
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ]
+    },
+  ]
+}
