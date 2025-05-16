@@ -40,3 +40,21 @@ executes functions.
 cd demo-main
 cargo run
 ```
+
+# How to debug?
+
+To spawn a Hyperlight VM and attach a debugger to it, you:
+1. Start a devcontainer
+2. Run the demo with the `gdb` feature:
+  ```
+  cd demo-main
+  cargo run --features gdb
+  ```
+3. Open a separate terminal and send an HTTP request to the demo server to spawn a cold Hyperlight VM:
+  ```
+  curl http://localhost:3030/hyperlight/hello-world/cold
+  ```
+4. Attach a debugger to the spawned VM by using one of the `Run and Debug` configurations in your VSCode editor:
+  - `Remote LLDB attach`
+  - `Remote GDB attach`
+5. Enjoy debugging!
