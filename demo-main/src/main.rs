@@ -4,7 +4,7 @@ mod non_hyperlight;
 use warp::Filter;
 
 #[cfg(not(feature = "gdb"))]
-const DEMO_GUEST_PATH: &str = "./demo-guest";
+const DEMO_GUEST_PATH: &str = "./demo-guest-release";
 #[cfg(feature = "gdb")]
 const DEMO_GUEST_PATH: &str = "./demo-guest-debug";
 
