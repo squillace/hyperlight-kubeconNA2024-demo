@@ -1,5 +1,5 @@
 use crate::hyperlight::{acquire_sandbox, release_sandbox};
-use hyperlight_common::flatbuffer_wrappers::function_types::ReturnType;
+
 use warp::Filter;
 
 pub(crate) fn deref_raw_null_ptr() -> impl Filter<Extract=impl warp::Reply, Error=warp::Rejection> + Clone {
@@ -13,10 +13,9 @@ pub(crate) fn deref_raw_null_ptr() -> impl Filter<Extract=impl warp::Reply, Erro
             // Lock and use the selected sandbox
             let result = {
                 let mut sandbox_guard = sandbox.lock().await;
-                sandbox_guard.call_guest_function_by_name(
+                sandbox_guard.call::<()>(
                     "DereferenceRawNullPointer",
-                    ReturnType::Void,
-                    None,
+                    (),
                 )
             };
             // `sandbox_guard` goes out of scope here and is dropped

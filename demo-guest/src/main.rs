@@ -10,11 +10,16 @@ use hyperlight_common::flatbuffer_wrappers::{
     guest_error::ErrorCode,
 };
 use hyperlight_common::flatbuffer_wrappers::util::get_flatbuffer_result;
+
+use hyperlight_guest_bin::{
+    guest_function::definition::GuestFunctionDefinition,
+    guest_function::register::register_function,
+    host_comm::{call_host_function},
+};
+
 use hyperlight_guest::{
     error::HyperlightGuestError,
-    guest_function_definition::GuestFunctionDefinition,
-    guest_function_register::register_function,
-    host_function_call::{call_host_function, get_host_return_value},
+
 };
 
 fn dereference_raw_null_pointer(_: &FunctionCall) -> hyperlight_guest::error::Result<Vec<u8>> {
@@ -24,12 +29,12 @@ fn dereference_raw_null_pointer(_: &FunctionCall) -> hyperlight_guest::error::Re
 }
 
 fn print_output(message: &str) -> hyperlight_guest::error::Result<Vec<u8>> {
-    call_host_function(
+    let result:i32 = call_host_function(
         "HostPrint",
         Some(Vec::from(&[ParameterValue::String(message.to_string())])),
         ReturnType::Int,
     )?;
-    let result = get_host_return_value::<i32>()?;
+
     Ok(get_flatbuffer_result(result))
 }
 

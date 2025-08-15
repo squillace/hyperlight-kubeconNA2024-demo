@@ -8,9 +8,6 @@
 
 use warp::Filter;
 
-use hyperlight_common::flatbuffer_wrappers::function_types::{ParameterValue, ReturnType};
-use hyperlight_host::sandbox_state::sandbox::EvolvableSandbox;
-use hyperlight_host::sandbox_state::transition::Noop;
 use hyperlight_host::{MultiUseSandbox, UninitializedSandbox};
 
 use crate::hyperlight::{acquire_sandbox, release_sandbox, SandboxError};
@@ -44,19 +41,16 @@ pub(crate) fn cold() -> impl Filter<Extract = impl warp::Reply, Error = warp::Re
             let uninitialized_sandbox = UninitializedSandbox::new(
                 hyperlight_host::GuestBinary::FilePath(crate::DEMO_GUEST_PATH.to_string()),
                 cfg,  // configuration
-                None, // default run options
-                None, // default host print function
             )
             .unwrap();
             let mut multi_use_sandbox: MultiUseSandbox =
-                uninitialized_sandbox.evolve(Noop::default()).unwrap();
+                uninitialized_sandbox.evolve().unwrap();
 
             let message = "Hello, World! I am executing inside of a VM :)\n".to_string();
             multi_use_sandbox
-                .call_guest_function_by_name(
+                .call::<i32>(
                     "PrintOutput",
-                    ReturnType::Int,
-                    Some(vec![ParameterValue::String(message.clone())]),
+                    message.clone(),
                 )
                 .unwrap();
 
@@ -78,10 +72,9 @@ pub(crate) fn warm() -> impl Filter<Extract = impl warp::Reply, Error = warp::Re
             {
                 let mut sandbox_guard = sandbox.lock().await;
                 sandbox_guard
-                    .call_guest_function_by_name(
+                    .call::<i32>(
                         "PrintOutput",
-                        ReturnType::Int,
-                        Some(vec![ParameterValue::String(message.clone())]),
+                        message.clone(),
                     )
                     .map_err(|_| warp::reject::custom(SandboxError))?;
                 // `sandbox_guard` goes out of scope here and is dropped

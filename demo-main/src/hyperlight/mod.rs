@@ -1,5 +1,3 @@
-use hyperlight_host::sandbox_state::sandbox::EvolvableSandbox;
-use hyperlight_host::sandbox_state::transition::Noop;
 use hyperlight_host::{MultiUseSandbox, UninitializedSandbox};
 use once_cell::sync::Lazy;
 use std::sync::Arc;
@@ -33,11 +31,9 @@ async fn create_sandbox() -> Arc<Mutex<MultiUseSandbox>> {
     let uninitialized_sandbox = UninitializedSandbox::new(
         hyperlight_host::GuestBinary::FilePath(crate::DEMO_GUEST_PATH.to_string()),
         None, // default configuration
-        None, // default run options
-        None, // default host print function
     ).unwrap();
 
-    let sandbox = uninitialized_sandbox.evolve(Noop::default()).unwrap();
+    let sandbox = uninitialized_sandbox.evolve().unwrap();
 
     Arc::new(Mutex::new(
         sandbox,
